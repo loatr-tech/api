@@ -1,14 +1,13 @@
-import express from 'express';
+import express, { Express } from 'express';
+import ktvApi from './ktv/ktv';
 
-const app = express();
+const app: Express = express();
 const port = process.env.PORT || 8080;
+
+ktvApi(app);
 
 app.get('/', (req, res) => {
   res.send('Welcome to loatr.tech');
-});
-
-app.get('/ktv', (req, res) => {
-  res.send('ktv api works');
 });
 
 app.listen(port, () => {
