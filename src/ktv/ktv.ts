@@ -1,6 +1,7 @@
 import { Express, Request } from 'express';
 import cheerio from 'cheerio';
 import axios from 'axios';
+import { EMBED_BLOCKLIST } from './ktv-embed-blocklist';
 
 export default function ktvApi(app: Express) {
   app.get('/ktv/search', async (req: Request, res) => {
@@ -36,12 +37,16 @@ export default function ktvApi(app: Express) {
       const qualifyVideos: any[] = [];
       videoContents.forEach((videoContent: any) => {
         const content = videoContent.videoRenderer;
-        if (content && qualifyVideos.length < 5) {
-          qualifyVideos.push({
-            videoId: content.videoId,
-            thumbnail: content.thumbnail,
-            title: content.title,
-          })
+        if (content && qualifyVideos.length < 10) {
+          const [{ text: ownerText }] = content.ownerText.runs;
+          if (!EMBED_BLOCKLIST.includes(ownerText)) {
+            qualifyVideos.push({
+              videoId: content.videoId,
+              thumbnail: content.thumbnail,
+              title: content.title,
+              ownerText,
+            });
+          }
         }
       })
 
