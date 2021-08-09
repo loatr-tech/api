@@ -1,6 +1,7 @@
 import express, { Express } from 'express';
 import cors from 'cors';
 import ktvApi from './ktv/ktv';
+import lifeApi from './life/post';
 
 const app: Express = express();
 const port = process.env.PORT || 8080;
@@ -9,6 +10,7 @@ const port = process.env.PORT || 8080;
 app.use(cors());
 
 ktvApi(app);
+lifeApi(app);
 
 app.get('/', (req, res) => {
   res.send('Welcome to loatr.tech');
