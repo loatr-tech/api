@@ -43,6 +43,11 @@ export default async function lifeApi(app: Express) {
         id: post._id,
         title: post.title,
         content: post.content,
+        category: post.category,
+        createdAt: post.createdAt,
+        views: post.views,
+        likes: post.likes,
+        comments: post.comments,
       })
     );
   });
@@ -53,6 +58,7 @@ export default async function lifeApi(app: Express) {
     const postObject = {
       title: req.body.title,
       content: req.body.content,
+      category: req.body.category,
       createdAt: new Date(),
       views: 0,
       likes: 0,
