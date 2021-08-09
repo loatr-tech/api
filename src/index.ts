@@ -8,6 +8,9 @@ const port = process.env.PORT || 8080;
 
 // CORS-enabled for all origins!
 app.use(cors());
+// Body parser
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 ktvApi(app);
 lifeApi(app);
