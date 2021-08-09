@@ -12,7 +12,7 @@ export default async function lifeApi(app: Express) {
     // Get total count
     const totalCount = await postCollections.countDocuments();
     // Find documents
-    const findOptions = { limit } as FindOptions<any>;
+    const findOptions = { limit, sort: { createdAt: -1 } } as FindOptions<any>;
     const postsCursor = postCollections.find({}, findOptions);
     const posts = (await postsCursor.toArray()).map(post => {
       return {
