@@ -1,10 +1,7 @@
 import { Express, Request, Response } from 'express';
 import { FindOptions, MongoClient, ObjectId } from 'mongodb';
-import connect from './connection';
 
-
-export default async function lifeApi(app: Express) {
-  const client: MongoClient = await connect();
+export default async function lifePostApi(app: Express, client: MongoClient) {
 
   app.get('/life/posts', async (req: Request, res: Response) => {
     const { limit = 10 } = req.query;
@@ -14,12 +11,12 @@ export default async function lifeApi(app: Express) {
     // Find documents
     const findOptions = { limit, sort: { createdAt: -1 } } as FindOptions<any>;
     const postsCursor = postCollections.find({}, findOptions);
-    const posts = (await postsCursor.toArray()).map(post => {
+    const posts = (await postsCursor.toArray()).map((post) => {
       return {
         id: post._id,
         title: post.title,
         content: post.content,
-      }
+      };
     });
 
     // Send to the client side
@@ -35,7 +32,9 @@ export default async function lifeApi(app: Express) {
   app.get('/life/post/:postId', async (req: Request, res: Response) => {
     const { postId } = req.params;
     const postCollections = client.db('shangan').collection('post');
-    const post: any = await postCollections.findOne({ _id: new ObjectId(postId) });
+    const post: any = await postCollections.findOne({
+      _id: new ObjectId(postId),
+    });
 
     // Send to the client side
     res.send(

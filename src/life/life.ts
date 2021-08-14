@@ -1,9 +1,12 @@
-import dotenv from 'dotenv';
+import { Express } from 'express';
 import { MongoClient } from 'mongodb';
+import dotenv from 'dotenv';
+import lifePostApi from './post';
+import lifeCommentsApi from './comments';
 
 dotenv.config();
 
-export default async function connect() {
+async function connect() {
   const {
     MONGODB_USERNAME,
     MONGODB_PASSWORD,
@@ -18,4 +21,11 @@ export default async function connect() {
   await mongoClient.connect();
 
   return mongoClient;
+}
+
+export default async function lifeApi(app: Express) {
+  const client: MongoClient = await connect();
+  
+  lifePostApi(app, client);
+  lifeCommentsApi(app, client);
 }

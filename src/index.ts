@@ -1,7 +1,7 @@
 import express, { Express } from 'express';
 import cors from 'cors';
 import ktvApi from './ktv/ktv';
-import lifeApi from './life/post';
+import lifeApi from './life/life';
 
 const app: Express = express();
 const port = process.env.PORT || 8080;
