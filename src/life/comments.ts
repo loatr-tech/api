@@ -15,13 +15,15 @@ export default async function lifeCommentsApi(app: Express, client: MongoClient)
     threadsCursor
       .sort('createdAt', 1)
       .limit(parseInt(limit as string))
-      .skip((parseInt(page as string) - 1) * 10);
+      .skip((parseInt(page as string) - 1) * parseInt(limit as string));
     const threads = (await threadsCursor.toArray()).map((thread) => {
       return {
         id: thread._id,
         post_id: thread.post_id,
         comment: thread.comment,
-        user_id: thread.user_id,
+        likes: thread.likes,
+        dislikes: thread.dislikes,
+        owner: thread.owner,
         replies: thread.replies,
         createdAt: thread.createdAt,
       };
@@ -33,6 +35,26 @@ export default async function lifeCommentsApi(app: Express, client: MongoClient)
     });
   });
 
+  app.get('/life/post/:postId/comment/:threadId', async (req: Request, res: Response) => {
+    const { threadId } = req.params;
+    if (threadId) {
+      const threadCollection = client.db('shangan').collection('thread');
+      const thread: any = await threadCollection.findOne({
+        _id: new ObjectId(threadId),
+      });
+      res.send({
+        id: thread._id,
+        post_id: thread.post_id,
+        comment: thread.comment,
+        likes: thread.likes,
+        dislikes: thread.dislikes,
+        owner: thread.owner,
+        replies: thread.replies,
+        createdAt: thread.createdAt,
+      });
+    }
+  });
+
   app.post('/life/post/comment', async (req: Request, res: Response) => {
     const { post_id, comment, user_id } = req.body;
     if (post_id && user_id) {
@@ -40,6 +62,8 @@ export default async function lifeCommentsApi(app: Express, client: MongoClient)
       const resultsAfterInsert = await threadCollection.insertOne({
         post_id,
         comment,
+        likes: 0,
+        dislikes: 0,
         user_id,
         createdAt: new Date(),
         replies: 0,
@@ -65,7 +89,7 @@ export default async function lifeCommentsApi(app: Express, client: MongoClient)
     repliesCursor
       .sort('createdAt', 1)
       .limit(parseInt(limit as string))
-      .skip((parseInt(page as string) - 1) * 10);
+      .skip((parseInt(page as string) - 1) * parseInt(limit as string));
     const replies = (await repliesCursor.toArray()).map((reply) => {
       return {
         id: reply._id,
