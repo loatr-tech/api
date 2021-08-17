@@ -3,6 +3,7 @@ import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
 import lifePostApi from './post';
 import lifeCommentsApi from './comments';
+import lifeAuthApi from './auth';
 
 dotenv.config();
 
@@ -28,4 +29,5 @@ export default async function lifeApi(app: Express) {
   
   lifePostApi(app, client);
   lifeCommentsApi(app, client);
+  lifeAuthApi(app, client);
 }
