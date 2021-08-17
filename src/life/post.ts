@@ -61,19 +61,29 @@ export default async function lifePostApi(app: Express, client: MongoClient) {
 
   app.post('/life/post', async (req: Request, res: Response) => {
     const postCollections = client.db('shangan').collection('post');
-    const { title, content, category } = req.body;
-    if (title && content && category) {
-      const postObject = {
-        title: req.body.title,
-        content: req.body.content,
-        category: req.body.category,
-        createdAt: new Date(),
-        views: 0,
-        likes: 0,
-        comments: 0,
-      };
-      const resultsAfterInsert = await postCollections.insertOne(postObject);
-      res.send(JSON.stringify(resultsAfterInsert));
+    const { title, content, category, owner_id } = req.body;
+    if (title && content && category && owner_id) {
+      const owner: any = await client.db('shangan').collection('user').findOne({ _id: new ObjectId(owner_id) });
+      if (owner) {
+        const postObject = {
+          title,
+          content,
+          category,
+          owner: {
+            id: owner._id,
+            name: owner.name,
+            avatar_url: owner.avatar_url,
+          },
+          createdAt: new Date(),
+          views: 0,
+          likes: 0,
+          comments: 0,
+        };
+        const resultsAfterInsert = await postCollections.insertOne(postObject);
+        res.send(JSON.stringify(resultsAfterInsert));
+      } else {
+        res.status(400).send('Cannot find the author, owner_id is not valid');
+      }
     } else {
       res.status(400).send('Missing required fields');
     }

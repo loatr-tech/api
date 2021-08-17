@@ -18,7 +18,7 @@ export default async function lifeAuthApi(app: Express, client: MongoClient) {
           googleId,
           name: user.name,
           email: user.email,
-          avatarUrl: user.imageUrl,
+          avatar_url: user.imageUrl,
           createdAt: new Date(),
         });
         console.log('new user');

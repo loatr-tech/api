@@ -56,24 +56,38 @@ export default async function lifeCommentsApi(app: Express, client: MongoClient)
   });
 
   app.post('/life/post/comment', async (req: Request, res: Response) => {
-    const { post_id, comment, user_id } = req.body;
-    if (post_id && user_id) {
+    const { post_id, comment, owner_id } = req.body;
+    if (post_id && owner_id) {
       const threadCollection = client.db('shangan').collection('thread');
-      const resultsAfterInsert = await threadCollection.insertOne({
-        post_id,
-        comment,
-        likes: 0,
-        dislikes: 0,
-        user_id,
-        createdAt: new Date(),
-        replies: 0,
-      });
-      // Update comments count on the post
-      await client
+      const owner: any = await client
         .db('shangan')
-        .collection('post')
-        .updateOne({ _id: new ObjectId(post_id) }, { $inc: { comments: 1 } });
-      res.send(JSON.stringify(resultsAfterInsert));
+        .collection('user')
+        .findOne({ _id: new ObjectId(owner_id) });
+      if (owner) {
+        const resultsAfterInsert = await threadCollection.insertOne({
+          post_id,
+          comment,
+          likes: 0,
+          dislikes: 0,
+          owner: {
+            id: owner._id,
+            name: owner.name,
+            avatar_url: owner.avatar_url,
+          },
+          createdAt: new Date(),
+          replies: 0,
+        });
+        // Update comments count on the post
+        await client
+          .db('shangan')
+          .collection('post')
+          .updateOne({ _id: new ObjectId(post_id) }, { $inc: { comments: 1 } });
+        res.send(JSON.stringify(resultsAfterInsert));
+      } else {
+        res.status(400).send('Cannot find the author, owner_id is not valid');
+      }
+    } else {
+      res.status(400).send('Missing required fields');
     }
   });
 
@@ -94,7 +108,7 @@ export default async function lifeCommentsApi(app: Express, client: MongoClient)
       return {
         id: reply._id,
         reply: reply.reply,
-        user_id: reply.user_id,
+        owner: reply.owner,
         quote: reply.quote,
         createdAt: reply.createdAt,
       };
@@ -107,29 +121,46 @@ export default async function lifeCommentsApi(app: Express, client: MongoClient)
   });
 
   app.post('/life/post/reply', async (req: Request, res: Response) => {
-    const { post_id, thread_id, reply, user_id, quote } = req.body;
-    if (post_id && thread_id && user_id) {
+    const { post_id, thread_id, reply, owner_id, quote } = req.body;
+    if (post_id && thread_id && owner_id) {
       const replyCollection = client.db('shangan').collection('reply');
-      const resultsAfterInsert = await replyCollection.insertOne({
-        post_id,
-        thread_id,
-        reply,
-        user_id,
-        quote,
-        createdAt: new Date(),
-      });
+      const owner: any = await client
+        .db('shangan')
+        .collection('user')
+        .findOne({ _id: new ObjectId(owner_id) });
+      if (owner) {
+        const resultsAfterInsert = await replyCollection.insertOne({
+          post_id,
+          thread_id,
+          reply,
+          owner: {
+            id: owner._id,
+            name: owner.name,
+            avatar_url: owner.avatar_url,
+          },
+          quote,
+          createdAt: new Date(),
+        });
 
-      // Update comments count on the post
-      await client
-        .db('shangan')
-        .collection('post')
-        .updateOne({ _id: new ObjectId(post_id) }, { $inc: { comments: 1 } });
-      // Update relys count on the thread
-      await client
-        .db('shangan')
-        .collection('thread')
-        .updateOne({ _id: new ObjectId(thread_id) }, { $inc: { replies: 1 } });
-      res.send(JSON.stringify(resultsAfterInsert));
+        // Update comments count on the post
+        await client
+          .db('shangan')
+          .collection('post')
+          .updateOne({ _id: new ObjectId(post_id) }, { $inc: { comments: 1 } });
+        // Update relys count on the thread
+        await client
+          .db('shangan')
+          .collection('thread')
+          .updateOne(
+            { _id: new ObjectId(thread_id) },
+            { $inc: { replies: 1 } }
+          );
+        res.send(JSON.stringify(resultsAfterInsert));
+      } else {
+        res.status(400).send('Cannot find the author, owner_id is not valid');
+      }
+    } else {
+      res.status(400).send('Missing required fields');
     }
   });
 }
