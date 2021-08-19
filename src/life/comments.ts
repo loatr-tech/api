@@ -74,6 +74,7 @@ export default async function lifeCommentsApi(app: Express, client: MongoClient)
             name: owner.name,
             avatar_url: owner.avatar_url,
           },
+          interacted_users: {},
           createdAt: new Date(),
           replies: 0,
         });
@@ -90,6 +91,49 @@ export default async function lifeCommentsApi(app: Express, client: MongoClient)
       res.status(400).send('Missing required fields');
     }
   });
+
+  app.post(
+    '/life/post/comment/:threadId/interact',
+    async (req: Request, res: Response) => {
+      const { threadId } = req.params;
+      const { like, dislike, user_id } = req.body;
+      if (user_id && (like || dislike)) {
+        const commentCollection = client.db('shangan').collection('thread');
+        const { interacted_users = {} }: any = await commentCollection.findOne({
+          _id: new ObjectId(threadId),
+        });
+        let likesAndDislikes = [0, 0];
+        if (interacted_users[user_id] === (like ? 1 : -1)) {
+          delete interacted_users[user_id];
+          likesAndDislikes = like ? [-1, 0] : [0, -1];
+        } else {
+          if (interacted_users[user_id]) {
+            likesAndDislikes = like ? [1, -1] : [-1, 1];
+          } else {
+            likesAndDislikes = like ? [1, 0] : [0, 1];
+          }
+          interacted_users[user_id] = like ? 1 : -1;
+        }
+        const [likes, dislikes] = likesAndDislikes;
+        await commentCollection.updateOne(
+          { _id: new ObjectId(threadId) },
+          {
+            $set: { interacted_users },
+            $inc: { likes, dislikes },
+          }
+        );
+        const updatedComment: any = await commentCollection.findOne({
+          _id: new ObjectId(threadId),
+        });
+        res.status(200).send({
+          likes: updatedComment.likes,
+          dislikes: updatedComment.dislikes,
+        });
+      } else {
+        res.status(400).send('Missing required fields');
+      }
+    }
+  );
 
   app.get('/life/post/:postId/comment/:threadId/replies', async (req: Request, res: Response) => {
     const { threadId } = req.params;
