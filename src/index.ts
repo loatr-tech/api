@@ -10,6 +10,7 @@ const port = process.env.PORT || 8080;
 app.use(cors());
 // Body parser
 app.use(express.urlencoded({ extended: true }));
+// Allow our application to accept json when doing POST request
 app.use(express.json());
 
 ktvApi(app);
