@@ -1,13 +1,13 @@
 import { Express, Request, Response } from 'express';
-import { ObjectId, MongoClient } from 'mongodb';
+import { ObjectId, Db } from 'mongodb';
 
-export default async function lifeCommentsApi(app: Express, client: MongoClient) {
+export default async function lifeCommentsApi(app: Express, db: Db) {
+  const threadCollection = db.collection('thread');
 
   app.get('/life/post/:postId/comments', async (req: Request, res: Response) => {
     const { postId } = req.params;
     const { limit = 10, page = 1 } = req.query;
     // Find threads
-    const threadCollection = client.db('shangan').collection('thread');
     const threadsCursor = threadCollection.find({ post_id: postId });
     // Get total count of threads in current post
     const numOfThreads = await threadsCursor.count();
@@ -27,7 +27,7 @@ export default async function lifeCommentsApi(app: Express, client: MongoClient)
         replies: thread.replies,
         createdAt: thread.createdAt,
       };
-    });;
+    });
 
     res.send({
       threads,
@@ -38,7 +38,6 @@ export default async function lifeCommentsApi(app: Express, client: MongoClient)
   app.get('/life/post/:postId/comment/:threadId', async (req: Request, res: Response) => {
     const { threadId } = req.params;
     if (threadId) {
-      const threadCollection = client.db('shangan').collection('thread');
       const thread: any = await threadCollection.findOne({
         _id: new ObjectId(threadId),
       });
@@ -58,9 +57,7 @@ export default async function lifeCommentsApi(app: Express, client: MongoClient)
   app.post('/life/post/comment', async (req: Request, res: Response) => {
     const { post_id, comment, owner_id } = req.body;
     if (post_id && owner_id) {
-      const threadCollection = client.db('shangan').collection('thread');
-      const owner: any = await client
-        .db('shangan')
+      const owner: any = await db
         .collection('user')
         .findOne({ _id: new ObjectId(owner_id) });
       if (owner) {
@@ -79,8 +76,7 @@ export default async function lifeCommentsApi(app: Express, client: MongoClient)
           replies: 0,
         });
         // Update comments count on the post
-        await client
-          .db('shangan')
+        await db
           .collection('post')
           .updateOne({ _id: new ObjectId(post_id) }, { $inc: { comments: 1 } });
         res.send(JSON.stringify(resultsAfterInsert));
@@ -98,8 +94,7 @@ export default async function lifeCommentsApi(app: Express, client: MongoClient)
       const { threadId } = req.params;
       const { like, dislike, user_id } = req.body;
       if (user_id && (like || dislike)) {
-        const commentCollection = client.db('shangan').collection('thread');
-        const { interacted_users = {} }: any = await commentCollection.findOne({
+        const { interacted_users = {} }: any = await threadCollection.findOne({
           _id: new ObjectId(threadId),
         });
         let likesAndDislikes = [0, 0];
@@ -115,14 +110,14 @@ export default async function lifeCommentsApi(app: Express, client: MongoClient)
           interacted_users[user_id] = like ? 1 : -1;
         }
         const [likes, dislikes] = likesAndDislikes;
-        await commentCollection.updateOne(
+        await threadCollection.updateOne(
           { _id: new ObjectId(threadId) },
           {
             $set: { interacted_users },
             $inc: { likes, dislikes },
           }
         );
-        const updatedComment: any = await commentCollection.findOne({
+        const updatedComment: any = await threadCollection.findOne({
           _id: new ObjectId(threadId),
         });
         res.status(200).send({
@@ -134,77 +129,4 @@ export default async function lifeCommentsApi(app: Express, client: MongoClient)
       }
     }
   );
-
-  app.get('/life/post/:postId/comment/:threadId/replies', async (req: Request, res: Response) => {
-    const { threadId } = req.params;
-    const { limit = 10, page = 1 } = req.query;
-    // Find replies
-    const threadCollection = client.db('shangan').collection('reply');
-    const repliesCursor = threadCollection.find({ thread_id: threadId });
-    // Get total count of replies in current thread
-    const numOfReplies = await repliesCursor.count();
-    // Apply filter to get paginated results
-    repliesCursor
-      .sort('createdAt', 1)
-      .limit(parseInt(limit as string))
-      .skip((parseInt(page as string) - 1) * parseInt(limit as string));
-    const replies = (await repliesCursor.toArray()).map((reply) => {
-      return {
-        id: reply._id,
-        reply: reply.reply,
-        owner: reply.owner,
-        quote: reply.quote,
-        createdAt: reply.createdAt,
-      };
-    });
-
-    res.send({
-      replies,
-      count: numOfReplies,
-    });
-  });
-
-  app.post('/life/post/reply', async (req: Request, res: Response) => {
-    const { post_id, thread_id, reply, owner_id, quote } = req.body;
-    if (post_id && thread_id && owner_id) {
-      const replyCollection = client.db('shangan').collection('reply');
-      const owner: any = await client
-        .db('shangan')
-        .collection('user')
-        .findOne({ _id: new ObjectId(owner_id) });
-      if (owner) {
-        const resultsAfterInsert = await replyCollection.insertOne({
-          post_id,
-          thread_id,
-          reply,
-          owner: {
-            id: owner._id,
-            name: owner.name,
-            avatar_url: owner.avatar_url,
-          },
-          quote,
-          createdAt: new Date(),
-        });
-
-        // Update comments count on the post
-        await client
-          .db('shangan')
-          .collection('post')
-          .updateOne({ _id: new ObjectId(post_id) }, { $inc: { comments: 1 } });
-        // Update relys count on the thread
-        await client
-          .db('shangan')
-          .collection('thread')
-          .updateOne(
-            { _id: new ObjectId(thread_id) },
-            { $inc: { replies: 1 } }
-          );
-        res.send(JSON.stringify(resultsAfterInsert));
-      } else {
-        res.status(400).send('Cannot find the author, owner_id is not valid');
-      }
-    } else {
-      res.status(400).send('Missing required fields');
-    }
-  });
 }

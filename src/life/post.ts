@@ -1,11 +1,18 @@
 import { Express, Request, Response } from 'express';
-import { Filter, FindOptions, MongoClient, ObjectId } from 'mongodb';
+import { Filter, FindOptions, Db, ObjectId } from 'mongodb';
 
-export default async function lifePostApi(app: Express, client: MongoClient) {
+export default async function lifePostApi(app: Express, db: Db) {
+  /**
+   * Endpoints
+   */
+  app.get('/life/posts', getPosts);
+  app.get('/life/post/:postId', getPost);
+  app.post('/life/post', createPost);
 
-  app.get('/life/posts', async (req: Request, res: Response) => {
+  const postCollections = db.collection('post');
+
+  async function getPosts(req: Request, res: Response) {
     const { limit = 10, category } = req.query;
-    const postCollections = client.db('shangan').collection('post');
     // Get total count
     const totalCount = await postCollections.countDocuments();
     // Find documents
@@ -34,11 +41,10 @@ export default async function lifePostApi(app: Express, client: MongoClient) {
         limit,
       })
     );
-  });
+  }
 
-  app.get('/life/post/:postId', async (req: Request, res: Response) => {
+  async function getPost(req: Request, res: Response) {
     const { postId } = req.params;
-    const postCollections = client.db('shangan').collection('post');
     const post: any = await postCollections.findOne({
       _id: new ObjectId(postId),
     });
@@ -57,13 +63,14 @@ export default async function lifePostApi(app: Express, client: MongoClient) {
         comments: post.comments,
       })
     );
-  });
+  }
 
-  app.post('/life/post', async (req: Request, res: Response) => {
-    const postCollections = client.db('shangan').collection('post');
+  async function createPost(req: Request, res: Response) {
     const { title, content, category, owner_id } = req.body;
     if (title && content && category && owner_id) {
-      const owner: any = await client.db('shangan').collection('user').findOne({ _id: new ObjectId(owner_id) });
+      const owner: any = await db
+        .collection('user')
+        .findOne({ _id: new ObjectId(owner_id) });
       if (owner) {
         const postObject = {
           title,
@@ -87,5 +94,5 @@ export default async function lifePostApi(app: Express, client: MongoClient) {
     } else {
       res.status(400).send('Missing required fields');
     }
-  });
+  }
 }

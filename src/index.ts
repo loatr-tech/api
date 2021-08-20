@@ -1,13 +1,17 @@
 import express, { Express } from 'express';
 import cors from 'cors';
 import ktvApi from './ktv/ktv';
-import lifeApi from './life/life';
+import lifeApi from './life';
 
 const app: Express = express();
 const port = process.env.PORT || 8080;
 
-// CORS-enabled for all origins!
-app.use(cors());
+// CORS-enabled for whitelist routes
+app.use(
+  cors({
+    origin: ['http://localhost:3210', 'https://life.loatr.tech/'],
+  })
+);
 // Body parser
 app.use(express.urlencoded({ extended: true }));
 // Allow our application to accept json when doing POST request

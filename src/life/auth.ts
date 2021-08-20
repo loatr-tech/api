@@ -1,11 +1,19 @@
 import { Express, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-import { ObjectId, MongoClient, FindOptions } from 'mongodb';
+import { Db, FindOptions } from 'mongodb';
 
-export default async function lifeAuthApi(app: Express, client: MongoClient) {
+export default async function lifeAuthApi(app: Express, db: Db) {
+  /**
+   * Endpoints
+   */
+  app.post('/life/third-party-login', thirdPartyLogin);
+  app.post('/life/login', regularLogin);
+  app.post('/life/signup', regularSignup);
+
+  const userCollection = db.collection('user');
+
   async function _getUserObj(filter = {}, userObject?: any) {
     if (!userObject) {
-      const userCollection = client.db('shangan').collection('user');
       userObject = await userCollection.findOne(filter, {
         projection: { password: 0 },
       } as FindOptions);
@@ -24,10 +32,9 @@ export default async function lifeAuthApi(app: Express, client: MongoClient) {
   /**
    * Endpoint to let user login with 3rd party integration
    */
-  app.post('/life/third-party-login', async (req: Request, res: Response) => {
+  async function thirdPartyLogin(req: Request, res: Response) {
     const { method, googleId, user } = req.body;
     if (method === 'google' && googleId && user) {
-      const userCollection = client.db('shangan').collection('user');
       const existingUser: any = await userCollection.findOne({ googleId });
       if (existingUser) {
         res.status(200).send(await _getUserObj({}, existingUser));
@@ -45,12 +52,11 @@ export default async function lifeAuthApi(app: Express, client: MongoClient) {
     } else {
       res.status(400).send('Missing required fields');
     }
-  });
+  }
 
-  app.post('/life/login', async (req: Request, res: Response) => {
+  async function regularLogin(req: Request, res: Response) {
     const { username, password } = req.body;
     if (username && password) {
-      const userCollection = client.db('shangan').collection('user');
       const existingUser: any = await userCollection.findOne({ $or: [
         { username },
         { email: username }
@@ -67,18 +73,17 @@ export default async function lifeAuthApi(app: Express, client: MongoClient) {
     } else {
       res.status(400).send('Missing required fields');
     }
-  });
+  }
 
   /**
    * Endpoint to let user signup with: username, email and password
    */
-  app.post('/life/signup', async (req: Request, res: Response) => {
+  async function regularSignup(req: Request, res: Response) {
     try {
       const { username, email, password } = req.body;
       // Create hashed password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      const userCollection = client.db('shangan').collection('user');
       // Find existing user base on given email
       const existingUser: any = await userCollection.findOne({ email });
 
@@ -124,5 +129,5 @@ export default async function lifeAuthApi(app: Express, client: MongoClient) {
     } catch (err) {
       res.sendStatus(500);
     }
-  });
+  }
 }

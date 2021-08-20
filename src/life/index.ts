@@ -1,13 +1,15 @@
 import { Express } from 'express';
-import { MongoClient } from 'mongodb';
+import { Db, MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
+
+import lifeAuthApi from './auth';
 import lifePostApi from './post';
 import lifeCommentsApi from './comments';
-import lifeAuthApi from './auth';
+import lifeRepliesApi from './replies';
 
 dotenv.config();
 
-async function connect() {
+async function _connect() {
   const {
     MONGODB_USERNAME,
     MONGODB_PASSWORD,
@@ -25,9 +27,11 @@ async function connect() {
 }
 
 export default async function lifeApi(app: Express) {
-  const client: MongoClient = await connect();
+  const client: MongoClient = await _connect();
+  const db: Db = client.db('shangan');
   
-  lifePostApi(app, client);
-  lifeCommentsApi(app, client);
-  lifeAuthApi(app, client);
+  lifeAuthApi(app, db);
+  lifePostApi(app, db);
+  lifeCommentsApi(app, db);
+  lifeRepliesApi(app, db);
 }
