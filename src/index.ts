@@ -9,7 +9,10 @@ const port = process.env.PORT || 8080;
 // CORS-enabled for whitelist routes
 app.use(
   cors({
-    origin: ['http://localhost:3210', 'https://life.loatr.tech/'],
+    origin: [
+      'http://localhost:3210',
+      'https://life.loatr.tech',
+    ],
   })
 );
 // Body parser

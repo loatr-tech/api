@@ -1,10 +1,18 @@
 import { Express, Request, Response } from 'express';
 import { ObjectId, Db } from 'mongodb';
 
-export default async function lifeCommentsApi(app: Express, db: Db) {
+export default async function threadsApi(app: Express, db: Db) {
+  /**
+   * Endpoints
+   */
+  app.get('/life/post/:postId/threads', getThreads);
+  app.get('/life/post/:postId/thread/:threadId', getThread);
+  app.post('/life/post/thread', createThread);
+  app.post('/life/post/thread/:threadId/interact', interactWithThread);
+
   const threadCollection = db.collection('thread');
 
-  app.get('/life/post/:postId/comments', async (req: Request, res: Response) => {
+  async function getThreads(req: Request, res: Response) {
     const { postId } = req.params;
     const { limit = 10, page = 1 } = req.query;
     // Find threads
@@ -33,9 +41,9 @@ export default async function lifeCommentsApi(app: Express, db: Db) {
       threads,
       count: numOfThreads,
     });
-  });
+  }
 
-  app.get('/life/post/:postId/comment/:threadId', async (req: Request, res: Response) => {
+  async function getThread(req: Request, res: Response) {
     const { threadId } = req.params;
     if (threadId) {
       const thread: any = await threadCollection.findOne({
@@ -52,9 +60,9 @@ export default async function lifeCommentsApi(app: Express, db: Db) {
         createdAt: thread.createdAt,
       });
     }
-  });
+  }
 
-  app.post('/life/post/comment', async (req: Request, res: Response) => {
+  async function createThread(req: Request, res: Response) {
     const { post_id, comment, owner_id } = req.body;
     if (post_id && owner_id) {
       const owner: any = await db
@@ -86,47 +94,44 @@ export default async function lifeCommentsApi(app: Express, db: Db) {
     } else {
       res.status(400).send('Missing required fields');
     }
-  });
+  }
 
-  app.post(
-    '/life/post/comment/:threadId/interact',
-    async (req: Request, res: Response) => {
-      const { threadId } = req.params;
-      const { like, dislike, user_id } = req.body;
-      if (user_id && (like || dislike)) {
-        const { interacted_users = {} }: any = await threadCollection.findOne({
-          _id: new ObjectId(threadId),
-        });
-        let likesAndDislikes = [0, 0];
-        if (interacted_users[user_id] === (like ? 1 : -1)) {
-          delete interacted_users[user_id];
-          likesAndDislikes = like ? [-1, 0] : [0, -1];
-        } else {
-          if (interacted_users[user_id]) {
-            likesAndDislikes = like ? [1, -1] : [-1, 1];
-          } else {
-            likesAndDislikes = like ? [1, 0] : [0, 1];
-          }
-          interacted_users[user_id] = like ? 1 : -1;
-        }
-        const [likes, dislikes] = likesAndDislikes;
-        await threadCollection.updateOne(
-          { _id: new ObjectId(threadId) },
-          {
-            $set: { interacted_users },
-            $inc: { likes, dislikes },
-          }
-        );
-        const updatedComment: any = await threadCollection.findOne({
-          _id: new ObjectId(threadId),
-        });
-        res.status(200).send({
-          likes: updatedComment.likes,
-          dislikes: updatedComment.dislikes,
-        });
+  async function interactWithThread(req: Request, res: Response) {
+    const { threadId } = req.params;
+    const { like, dislike, user_id } = req.body;
+    if (user_id && (like || dislike)) {
+      const { interacted_users = {} }: any = await threadCollection.findOne({
+        _id: new ObjectId(threadId),
+      });
+      let likesAndDislikes = [0, 0];
+      if (interacted_users[user_id] === (like ? 1 : -1)) {
+        delete interacted_users[user_id];
+        likesAndDislikes = like ? [-1, 0] : [0, -1];
       } else {
-        res.status(400).send('Missing required fields');
+        if (interacted_users[user_id]) {
+          likesAndDislikes = like ? [1, -1] : [-1, 1];
+        } else {
+          likesAndDislikes = like ? [1, 0] : [0, 1];
+        }
+        interacted_users[user_id] = like ? 1 : -1;
       }
+      const [likes, dislikes] = likesAndDislikes;
+      await threadCollection.updateOne(
+        { _id: new ObjectId(threadId) },
+        {
+          $set: { interacted_users },
+          $inc: { likes, dislikes },
+        }
+      );
+      const updatedComment: any = await threadCollection.findOne({
+        _id: new ObjectId(threadId),
+      });
+      res.status(200).send({
+        likes: updatedComment.likes,
+        dislikes: updatedComment.dislikes,
+      });
+    } else {
+      res.status(400).send('Missing required fields');
     }
-  );
+  }
 }

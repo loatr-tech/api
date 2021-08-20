@@ -1,7 +1,7 @@
 import { Express, Request, Response } from 'express';
 import { Filter, FindOptions, Db, ObjectId } from 'mongodb';
 
-export default async function lifePostApi(app: Express, db: Db) {
+export default async function postsApi(app: Express, db: Db) {
   /**
    * Endpoints
    */

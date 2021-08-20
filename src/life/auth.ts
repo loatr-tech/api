@@ -2,7 +2,7 @@ import { Express, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { Db, FindOptions } from 'mongodb';
 
-export default async function lifeAuthApi(app: Express, db: Db) {
+export default async function authApi(app: Express, db: Db) {
   /**
    * Endpoints
    */

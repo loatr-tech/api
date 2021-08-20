@@ -1,11 +1,11 @@
 import { Express, Request, Response } from 'express';
 import { ObjectId, Db } from 'mongodb';
 
-export default async function lifeRepliesApi(app: Express, db: Db) {
+export default async function repliesApi(app: Express, db: Db) {
   /**
    * Endpoints
    */
-  app.get('/life/post/:postId/comment/:threadId/replies', getReplies);
+  app.get('/life/post/:postId/thread/:threadId/replies', getReplies);
   app.post('/life/post/reply', createReply);
 
 

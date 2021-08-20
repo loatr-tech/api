@@ -2,10 +2,10 @@ import { Express } from 'express';
 import { Db, MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
 
-import lifeAuthApi from './auth';
-import lifePostApi from './post';
-import lifeCommentsApi from './comments';
-import lifeRepliesApi from './replies';
+import authApi from './auth';
+import postsApi from './post';
+import threadsApi from './threads';
+import repliesApi from './replies';
 
 dotenv.config();
 
@@ -30,8 +30,8 @@ export default async function lifeApi(app: Express) {
   const client: MongoClient = await _connect();
   const db: Db = client.db('shangan');
   
-  lifeAuthApi(app, db);
-  lifePostApi(app, db);
-  lifeCommentsApi(app, db);
-  lifeRepliesApi(app, db);
+  authApi(app, db);
+  postsApi(app, db);
+  threadsApi(app, db);
+  repliesApi(app, db);
 }
