@@ -24,7 +24,7 @@ export default async function lifeAuthApi(app: Express, client: MongoClient) {
   /**
    * Endpoint to let user login with 3rd party integration
    */
-  app.post('/life/login', async (req: Request, res: Response) => {
+  app.post('/life/third-party-login', async (req: Request, res: Response) => {
     const { method, googleId, user } = req.body;
     if (method === 'google' && googleId && user) {
       const userCollection = client.db('shangan').collection('user');
@@ -41,6 +41,28 @@ export default async function lifeAuthApi(app: Express, client: MongoClient) {
         });
         const userObject: any = await _getUserObj({ _id: insertedId });
         res.status(201).send(userObject);
+      }
+    } else {
+      res.status(400).send('Missing required fields');
+    }
+  });
+
+  app.post('/life/login', async (req: Request, res: Response) => {
+    const { username, password } = req.body;
+    if (username && password) {
+      const userCollection = client.db('shangan').collection('user');
+      const existingUser: any = await userCollection.findOne({ $or: [
+        { username },
+        { email: username }
+      ]});
+      if (existingUser) {
+        if (await bcrypt.compare(password, existingUser.password)) {
+          res.send(await _getUserObj({}, existingUser));
+        } else {
+          res.status(401).send('用户名或者密码错误');
+        }
+      } else {
+        res.status(404).send('该用户不存在');
       }
     } else {
       res.status(400).send('Missing required fields');
