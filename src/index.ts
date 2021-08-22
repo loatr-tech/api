@@ -2,6 +2,7 @@ import express, { Express } from 'express';
 import cors from 'cors';
 import ktvApi from './ktv/ktv';
 import lifeApi from './life';
+const cookieParser = require('cookie-parser');
 
 const app: Express = express();
 const port = process.env.PORT || 8080;
@@ -12,13 +13,17 @@ app.use(
     origin: [
       'http://localhost:3210',
       'https://life.loatr.tech',
+      'https://ktv.loatr.tech',
     ],
+    credentials: true,
   })
 );
+
 // Body parser
 app.use(express.urlencoded({ extended: true }));
 // Allow our application to accept json when doing POST request
 app.use(express.json());
+app.use(cookieParser());
 
 ktvApi(app);
 lifeApi(app);

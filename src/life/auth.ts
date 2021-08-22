@@ -1,5 +1,6 @@
 import { Express, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 import { Db, FindOptions } from 'mongodb';
 
 export default async function authApi(app: Express, db: Db) {
@@ -29,6 +30,16 @@ export default async function authApi(app: Express, db: Db) {
     };
   }
 
+  function _getToken(userObject: any) {
+    return jwt.sign(
+      {
+        id: userObject._id,
+        email: userObject.email,
+      },
+      process.env.ACCESS_TOKEN_SECRET as string
+    );
+  }
+
   /**
    * Endpoint to let user login with 3rd party integration
    */
@@ -37,6 +48,7 @@ export default async function authApi(app: Express, db: Db) {
     if (method === 'google' && googleId && user) {
       const existingUser: any = await userCollection.findOne({ googleId });
       if (existingUser) {
+        res.cookie('SA_TOKEN', _getToken(existingUser), { httpOnly: true });
         res.status(200).send(await _getUserObj({}, existingUser));
       } else {
         const { insertedId } = await userCollection.insertOne({
@@ -47,6 +59,7 @@ export default async function authApi(app: Express, db: Db) {
           createdAt: new Date(),
         });
         const userObject: any = await _getUserObj({ _id: insertedId });
+        res.cookie('SA_TOKEN', _getToken(userObject), { httpOnly: true });
         res.status(201).send(userObject);
       }
     } else {
@@ -63,6 +76,10 @@ export default async function authApi(app: Express, db: Db) {
       ]});
       if (existingUser) {
         if (await bcrypt.compare(password, existingUser.password)) {
+          res.cookie('SA_TOKEN', _getToken(existingUser), {
+            httpOnly: true,
+          });
+          res.cookie('SA_TOKEN', _getToken(existingUser), { httpOnly: true });
           res.send(await _getUserObj({}, existingUser));
         } else {
           res.status(401).send('用户名或者密码错误');
@@ -105,6 +122,7 @@ export default async function authApi(app: Express, db: Db) {
             }
           );
           // Return
+          res.cookie('SA_TOKEN', _getToken(existingUser), { httpOnly: true });
           res.status(200).send(await _getUserObj({ _id: existingUser._id }));
         }
       } else {
@@ -123,7 +141,11 @@ export default async function authApi(app: Express, db: Db) {
           });
 
           // Return
-          res.status(201).send(await _getUserObj({ _id: insertedId }));
+          const userObject = await _getUserObj({ _id: insertedId });
+          res.cookie('SA_TOKEN', _getToken(userObject), {
+            httpOnly: true,
+          });
+          res.status(201).send(userObject);
         }
       }
     } catch (err) {
