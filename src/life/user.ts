@@ -39,14 +39,15 @@ export default async function userApi(app: Express, db: Db) {
   async function updateUser(req: Request, res: Response) {
     const userId = req.user.id;
     const { name, avatar_url, password } = req.body;
+
     const modifiedFields: any = {};
     if (name) modifiedFields.name = name;
     if (avatar_url) modifiedFields.avatar_url = avatar_url;
     if (password) modifiedFields.password = await bcrypt.hash(password, 10);
-    
+
     await userCollection.updateOne(
-      { id: new ObjectId(userId) },
-      modifiedFields
+      { _id: new ObjectId(userId) },
+      { $set: modifiedFields }
     );
     res.send();
   }
