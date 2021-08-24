@@ -40,15 +40,19 @@ export default async function userApi(app: Express, db: Db) {
     const userId = req.user.id;
     const { name, avatar_url, password } = req.body;
 
-    const modifiedFields: any = {};
-    if (name) modifiedFields.name = name;
-    if (avatar_url) modifiedFields.avatar_url = avatar_url;
-    if (password) modifiedFields.password = await bcrypt.hash(password, 10);
+    if (name || avatar_url || password) {
+      const modifiedFields: any = {};
+      if (name) modifiedFields.name = name;
+      if (avatar_url) modifiedFields.avatar_url = avatar_url;
+      if (password) modifiedFields.password = await bcrypt.hash(password, 10);
 
-    await userCollection.updateOne(
-      { _id: new ObjectId(userId) },
-      { $set: modifiedFields }
-    );
-    res.send();
+      await userCollection.updateOne(
+        { _id: new ObjectId(userId) },
+        { $set: modifiedFields }
+      );
+      res.status(200).send();
+    } else {
+      res.status(400).send('Missing required fields');
+    }
   }
 }
