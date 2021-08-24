@@ -1,5 +1,6 @@
 import { Express, Request, Response } from 'express';
 import { Filter, FindOptions, Db, ObjectId } from 'mongodb';
+import { Post } from './models';
 
 export default async function postsApi(app: Express, db: Db) {
   /**
@@ -25,11 +26,10 @@ export default async function postsApi(app: Express, db: Db) {
         id: post._id,
         title: post.title,
         content: post.content,
+        category: post.category,
         createdAt: post.createdAt,
         owner: post.owner,
-        views: post.views,
-        likes: post.likes,
-        comments: post.comments,
+        interactions: post.interactions,
       };
     });
 
@@ -58,9 +58,9 @@ export default async function postsApi(app: Express, db: Db) {
         category: post.category,
         createdAt: post.createdAt,
         owner: post.owner,
-        views: post.views,
-        likes: post.likes,
-        comments: post.comments,
+        meta_data: post.meta_data,
+        interactions: post.interactions,
+        tags: post.tags,
       })
     );
   }
@@ -82,9 +82,12 @@ export default async function postsApi(app: Express, db: Db) {
             avatar_url: owner.avatar_url,
           },
           createdAt: new Date(),
-          views: 0,
-          likes: 0,
-          comments: 0,
+          interactions: {
+            views: 0,
+            likes: 0,
+            comments: 0,
+          },
+          tags: [],
         };
         const resultsAfterInsert = await postCollections.insertOne(postObject);
         res.send(JSON.stringify(resultsAfterInsert));
