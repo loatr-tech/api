@@ -1,12 +1,13 @@
 import { Express, Request, Response } from 'express';
 import { ObjectId, Db } from 'mongodb';
+import { optionalToken } from './middleware';
 
 export default async function threadsApi(app: Express, db: Db) {
   /**
    * Endpoints
    */
-  app.get('/life/post/:postId/threads', getThreads);
-  app.get('/life/post/:postId/thread/:threadId', getThread);
+  app.get('/life/post/:postId/threads', optionalToken, getThreads);
+  app.get('/life/post/:postId/thread/:threadId', optionalToken, getThread);
   app.post('/life/post/thread', createThread);
   app.post('/life/post/thread/:threadId/interact', interactWithThread);
 
@@ -25,7 +26,7 @@ export default async function threadsApi(app: Express, db: Db) {
       .limit(parseInt(limit as string))
       .skip((parseInt(page as string) - 1) * parseInt(limit as string));
     const threads = (await threadsCursor.toArray()).map((thread) => {
-      return {
+      const threadObject: any = {
         id: thread._id,
         post_id: thread.post_id,
         comment: thread.comment,
@@ -35,6 +36,10 @@ export default async function threadsApi(app: Express, db: Db) {
         replies: thread.replies,
         createdAt: thread.createdAt,
       };
+      if (req.user && thread.interacted_users[req.user.id]) {
+        threadObject.interacted = thread.interacted_users[req.user.id];
+      }
+      return threadObject;
     });
 
     res.send({
@@ -86,7 +91,7 @@ export default async function threadsApi(app: Express, db: Db) {
         // Update comments count on the post
         await db
           .collection('post')
-          .updateOne({ _id: new ObjectId(post_id) }, { $inc: { comments: 1 } });
+          .updateOne({ _id: new ObjectId(post_id) }, { $inc: { 'interactions.comments': 1 } });
         res.send(JSON.stringify(resultsAfterInsert));
       } else {
         res.status(400).send('Cannot find the author, owner_id is not valid');
@@ -129,6 +134,7 @@ export default async function threadsApi(app: Express, db: Db) {
       res.status(200).send({
         likes: updatedComment.likes,
         dislikes: updatedComment.dislikes,
+        interacted: interacted_users[user_id],
       });
     } else {
       res.status(400).send('Missing required fields');

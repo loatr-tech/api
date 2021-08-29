@@ -1,7 +1,7 @@
 import { Express, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { Db, FindOptions, ObjectId } from 'mongodb';
-import authenticateToken from './middleware/authenticate-token';
+import { authenticateToken } from './middleware';
 
 export default async function userApi(app: Express, db: Db) {
   /**

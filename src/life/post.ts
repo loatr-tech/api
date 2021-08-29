@@ -1,7 +1,7 @@
 import { Express, Request, Response } from 'express';
 import { Filter, FindOptions, Db, ObjectId } from 'mongodb';
-import authenticateToken from './middleware/authenticate-token';
-import { Post } from './models';
+import { authenticateToken } from './middleware';
+
 
 export default async function postsApi(app: Express, db: Db) {
   /**

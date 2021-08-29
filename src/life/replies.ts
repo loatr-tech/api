@@ -63,7 +63,7 @@ export default async function repliesApi(app: Express, db: Db) {
         // Update comments count on the post
         await db
           .collection('post')
-          .updateOne({ _id: new ObjectId(post_id) }, { $inc: { comments: 1 } });
+          .updateOne({ _id: new ObjectId(post_id) }, { $inc: { 'interactions.comments': 1 } });
         // Update replies count on the thread
         await threadCollection.updateOne(
           { _id: new ObjectId(thread_id) },
