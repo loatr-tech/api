@@ -1,5 +1,6 @@
 import { Express, Request, Response } from 'express';
 import { Filter, FindOptions, Db, ObjectId } from 'mongodb';
+import authenticateToken from './middleware/authenticate-token';
 import { Post } from './models';
 
 export default async function postsApi(app: Express, db: Db) {
@@ -9,6 +10,7 @@ export default async function postsApi(app: Express, db: Db) {
   app.get('/life/posts', getPosts);
   app.get('/life/post/:postId', getPost);
   app.post('/life/post', createPost);
+  app.post('/life/post/:postId/interact', authenticateToken, interactWithPost);
 
   const postCollections = db.collection('post');
 
@@ -48,6 +50,14 @@ export default async function postsApi(app: Express, db: Db) {
     const post: any = await postCollections.findOne({
       _id: new ObjectId(postId),
     });
+
+    // Update the views every time we get post successfully
+    postCollections.updateOne(
+      { _id: new ObjectId(postId) },
+      {
+        $inc: { 'interactions.views': 1 },
+      }
+    );
 
     // Send to the client side
     res.send(
@@ -94,6 +104,39 @@ export default async function postsApi(app: Express, db: Db) {
       } else {
         res.status(400).send('Cannot find the author, owner_id is not valid');
       }
+    } else {
+      res.status(400).send('Missing required fields');
+    }
+  }
+
+  async function interactWithPost(req: Request, res: Response) {
+    const { postId } = req.params;
+    const { like } = req.body;
+    const user_id = req.user.id;
+    if (user_id && like) {
+      const { liked_users = {} }: any = await postCollections.findOne({
+        _id: new ObjectId(postId),
+      });
+      let likes = 0;
+      if (liked_users[user_id]) {
+        delete liked_users[user_id];
+        likes = -1;
+      } else {
+        liked_users[user_id] = 1;
+        likes = 1;
+      }
+
+      await postCollections.updateOne(
+        { _id: new ObjectId(postId) },
+        {
+          $set: { liked_users },
+          $inc: { 'interactions.likes': likes },
+        }
+      );
+      const updatedPost: any = await postCollections.findOne({
+        _id: new ObjectId(postId),
+      });
+      res.status(200).send({ interactions: updatedPost.interactions });
     } else {
       res.status(400).send('Missing required fields');
     }
