@@ -10,6 +10,7 @@ export default async function threadsApi(app: Express, db: Db) {
   app.get('/life/post/:postId/thread/:threadId', optionalToken, getThread);
   app.post('/life/post/thread', createThread);
   app.post('/life/post/thread/:threadId/interact', interactWithThread);
+  app.delete('/life/post/threads', removeThreads);
 
   const threadCollection = db.collection('thread');
 
@@ -139,5 +140,10 @@ export default async function threadsApi(app: Express, db: Db) {
     } else {
       res.status(400).send('Missing required fields');
     }
+  }
+
+  async function removeThreads(req: Request, res: Response) {
+    await threadCollection.deleteMany({});
+    res.sendStatus(200);
   }
 }

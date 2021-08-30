@@ -11,6 +11,7 @@ export default async function postsApi(app: Express, db: Db) {
   app.get('/life/post/:postId', getPost);
   app.post('/life/post', createPost);
   app.post('/life/post/:postId/interact', authenticateToken, interactWithPost);
+  app.delete('/life/posts', removePosts);
 
   const postCollections = db.collection('post');
 
@@ -140,5 +141,10 @@ export default async function postsApi(app: Express, db: Db) {
     } else {
       res.status(400).send('Missing required fields');
     }
+  }
+
+  async function removePosts(req: Request, res: Response) {
+    await postCollections.deleteMany({});
+    res.sendStatus(200);
   }
 }

@@ -7,7 +7,7 @@ export default async function repliesApi(app: Express, db: Db) {
    */
   app.get('/life/post/:postId/thread/:threadId/replies', getReplies);
   app.post('/life/post/reply', createReply);
-
+  app.delete('/life/post/replies', removeReplies);
 
   const threadCollection = db.collection('thread');
   const replyCollection = db.collection('reply');
@@ -76,5 +76,10 @@ export default async function repliesApi(app: Express, db: Db) {
     } else {
       res.status(400).send('Missing required fields');
     }
+  }
+
+  async function removeReplies(req: Request, res: Response) {
+    await replyCollection.deleteMany({});
+    res.sendStatus(200);
   }
 }
