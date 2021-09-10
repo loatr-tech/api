@@ -68,6 +68,7 @@ export default async function postsApi(app: Express, db: Db) {
         content: post.content,
         category: post.category,
         createdAt: post.createdAt,
+        infos: post.infos,
         owner: post.owner,
         meta_data: post.meta_data,
         interactions: post.interactions,
@@ -77,7 +78,7 @@ export default async function postsApi(app: Express, db: Db) {
   }
 
   async function createPost(req: Request, res: Response) {
-    const { title, content, category, owner_id } = req.body;
+    const { title, content, category, owner_id, infos } = req.body;
     if (title && content && category && owner_id) {
       const owner: any = await db
         .collection('user')
@@ -92,6 +93,7 @@ export default async function postsApi(app: Express, db: Db) {
             name: owner.name,
             avatar_url: owner.avatar_url,
           },
+          infos,
           createdAt: new Date(),
           interactions: {
             views: 0,
