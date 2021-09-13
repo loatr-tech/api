@@ -2,6 +2,7 @@ import express, { Express } from 'express';
 import cors from 'cors';
 import ktvApi from './ktv/ktv';
 import lifeApi from './life';
+import budgetApi from './budget';
 const cookieParser = require('cookie-parser');
 
 const app: Express = express();
@@ -12,7 +13,9 @@ app.use(
   cors({
     origin: [
       'http://localhost:3210',
+      'http://localhost:1234',
       'https://life.loatr.tech',
+      'https://budget.loatr.tech',
       'https://ktv.loatr.tech',
     ],
     credentials: true,
@@ -27,6 +30,7 @@ app.use(cookieParser());
 
 ktvApi(app);
 lifeApi(app);
+budgetApi(app);
 
 app.get('/', (req, res) => {
   res.send('Welcome to loatr.tech');

@@ -4,21 +4,18 @@ import dotenv from 'dotenv';
 
 import authApi from './auth';
 import userApi from './user';
-import postsApi from './post';
-import threadsApi from './threads';
-import repliesApi from './replies';
 
 dotenv.config();
 
 async function _connect() {
   const {
-    SHANGAN_DB_USERNAME,
-    SHANGAN_DB_PASSWORD,
-    SHANGAN_DB_CLUSTER,
-    SHANGAN_DB_DATABASE,
+    BUDGET_DB_USERNAME,
+    BUDGET_DB_PASSWORD,
+    BUDGET_DB_CLUSTER,
+    BUDGET_DB_DATABASE,
   } = process.env;
 
-  const uri = `mongodb+srv://${SHANGAN_DB_USERNAME}:${SHANGAN_DB_PASSWORD}@${SHANGAN_DB_CLUSTER}/${SHANGAN_DB_DATABASE}?retryWrites=true&w=majority`;
+  const uri = `mongodb+srv://${BUDGET_DB_USERNAME}:${BUDGET_DB_PASSWORD}@${BUDGET_DB_CLUSTER}/${BUDGET_DB_DATABASE}?retryWrites=true&w=majority`;
 
   const mongoClient = new MongoClient(uri);
 
@@ -27,13 +24,10 @@ async function _connect() {
   return mongoClient;
 }
 
-export default async function lifeApi(app: Express) {
+export default async function budgetApi(app: Express) {
   const client: MongoClient = await _connect();
   const db: Db = client.db('shangan');
 
   authApi(app, db);
   userApi(app, db);
-  postsApi(app, db);
-  threadsApi(app, db);
-  repliesApi(app, db);
 }
