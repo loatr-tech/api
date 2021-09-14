@@ -57,6 +57,7 @@ export default async function authApi(app: Express, db: Db) {
           email: user.email,
           avatar_url: user.imageUrl,
           createdAt: new Date(),
+          groups: [],
         });
         const userObject: any = await _getUserObj({ _id: insertedId });
         res.cookie('SA_TOKEN', _getToken(userObject), { httpOnly: true });
@@ -138,6 +139,7 @@ export default async function authApi(app: Express, db: Db) {
             password: hashedPassword,
             avatar_url: null,
             createdAt: new Date(),
+            groups: [],
           });
 
           // Return

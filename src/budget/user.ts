@@ -11,6 +11,7 @@ export default async function userApi(app: Express, db: Db) {
   app.patch('/budget/user', authenticateToken, updateUser);
 
   const userCollection = db.collection('user');
+  const groupCollection = db.collection('group');
 
   async function getUser(req: Request, res: Response) {
     const userId = req.user.id;
@@ -21,6 +22,20 @@ export default async function userApi(app: Express, db: Db) {
       } as FindOptions
     );
     if (userObject) {
+      const matchedGroups = await groupCollection
+        .find({
+          _id: {
+            $in: userObject.groups.map(
+              (groupId: string) => new ObjectId(groupId)
+            ),
+          },
+        })
+        .toArray();
+
+      const formattedGroups = matchedGroups.map(({ _id, name }: any) => {
+        return { id: _id, name };
+      });
+      
       const formattedUserObject = {
         id: userObject._id,
         name: userObject.name,
@@ -29,6 +44,7 @@ export default async function userApi(app: Express, db: Db) {
         googleId: userObject.googleId,
         avatar_url: userObject.avatar_url,
         createdAt: userObject.createdAt,
+        groups: formattedGroups,
       };
       res.status(200).send(formattedUserObject);
     } else {
