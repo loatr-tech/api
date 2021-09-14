@@ -51,6 +51,7 @@ export default async function authApi(app: Express, db: Db) {
         res.cookie('SA_TOKEN', _getToken(existingUser), {
           httpOnly: true,
           sameSite: 'none',
+          secure: true,
         });
         res.status(200).send(await _getUserObj({}, existingUser));
       } else {
@@ -63,7 +64,11 @@ export default async function authApi(app: Express, db: Db) {
           groups: [],
         });
         const userObject: any = await _getUserObj({ _id: insertedId });
-        res.cookie('SA_TOKEN', _getToken(userObject), { httpOnly: true, sameSite: 'none' });
+        res.cookie('SA_TOKEN', _getToken(userObject), {
+          httpOnly: true,
+          sameSite: 'none',
+          secure: true,
+        });
         res.status(201).send(userObject);
       }
     } else {
@@ -83,6 +88,7 @@ export default async function authApi(app: Express, db: Db) {
           res.cookie('SA_TOKEN', _getToken(existingUser), {
             httpOnly: true,
             sameSite: 'none',
+            secure: true,
           });
           res.send(await _getUserObj({}, existingUser));
         } else {
@@ -129,6 +135,7 @@ export default async function authApi(app: Express, db: Db) {
           res.cookie('SA_TOKEN', _getToken(existingUser), {
             httpOnly: true,
             sameSite: 'none',
+            secure: true,
           });
           res.status(200).send(await _getUserObj({ _id: existingUser._id }));
         }
@@ -153,6 +160,7 @@ export default async function authApi(app: Express, db: Db) {
           res.cookie('SA_TOKEN', _getToken(userObject), {
             httpOnly: true,
             sameSite: 'none',
+            secure: true,
           });
           res.status(201).send(userObject);
         }
