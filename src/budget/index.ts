@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import authApi from './auth';
 import userApi from './user';
 import groupApi from './group';
+import categoryApi from './category';
 
 dotenv.config();
 
@@ -32,4 +33,5 @@ export default async function budgetApi(app: Express) {
   authApi(app, db);
   userApi(app, db);
   groupApi(app, db);
+  categoryApi(app, db);
 }
