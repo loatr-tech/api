@@ -38,7 +38,7 @@ export default async function categoryApi(app: Express, db: Db) {
             return {
               id: category._id,
               name: category.name,
-              show_notes: category.showNotes,
+              show_notes: category.show_notes,
             };
           }),
         });
@@ -52,7 +52,7 @@ export default async function categoryApi(app: Express, db: Db) {
   }
 
   async function createCategory(req: Request, res: Response) {
-    const { name, group_id, parent_category, is_top_category } = req.body;
+    const { name, group_id, parent_category, is_top_category, show_notes } = req.body;
     const { user } = req;
     if (name && group_id && user) {
       const categoryObject = {
@@ -60,6 +60,7 @@ export default async function categoryApi(app: Express, db: Db) {
         group_id,
         is_top_category,
         parent_category,
+        show_notes,
         createdBy: user.id,
         createdAt: new Date(),
       };
