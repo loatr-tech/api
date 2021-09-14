@@ -60,7 +60,7 @@ export default async function authApi(app: Express, db: Db) {
           groups: [],
         });
         const userObject: any = await _getUserObj({ _id: insertedId });
-        res.cookie('SA_TOKEN', _getToken(userObject), { httpOnly: true });
+        res.cookie('SA_TOKEN', _getToken(userObject), { httpOnly: true, sameSite: 'none' });
         res.status(201).send(userObject);
       }
     } else {
