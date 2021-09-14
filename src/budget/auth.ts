@@ -48,7 +48,10 @@ export default async function authApi(app: Express, db: Db) {
     if (method === 'google' && googleId && user) {
       const existingUser: any = await userCollection.findOne({ googleId });
       if (existingUser) {
-        res.cookie('SA_TOKEN', _getToken(existingUser), { httpOnly: true });
+        res.cookie('SA_TOKEN', _getToken(existingUser), {
+          httpOnly: true,
+          sameSite: 'none',
+        });
         res.status(200).send(await _getUserObj({}, existingUser));
       } else {
         const { insertedId } = await userCollection.insertOne({
@@ -60,7 +63,7 @@ export default async function authApi(app: Express, db: Db) {
           groups: [],
         });
         const userObject: any = await _getUserObj({ _id: insertedId });
-        res.cookie('SA_TOKEN', _getToken(userObject), { httpOnly: true });
+        res.cookie('SA_TOKEN', _getToken(userObject), { httpOnly: true, sameSite: 'none' });
         res.status(201).send(userObject);
       }
     } else {
@@ -79,8 +82,8 @@ export default async function authApi(app: Express, db: Db) {
         if (await bcrypt.compare(password, existingUser.password)) {
           res.cookie('SA_TOKEN', _getToken(existingUser), {
             httpOnly: true,
+            sameSite: 'none',
           });
-          res.cookie('SA_TOKEN', _getToken(existingUser), { httpOnly: true });
           res.send(await _getUserObj({}, existingUser));
         } else {
           res.status(401).send('用户名或者密码错误');
@@ -123,7 +126,10 @@ export default async function authApi(app: Express, db: Db) {
             }
           );
           // Return
-          res.cookie('SA_TOKEN', _getToken(existingUser), { httpOnly: true });
+          res.cookie('SA_TOKEN', _getToken(existingUser), {
+            httpOnly: true,
+            sameSite: 'none',
+          });
           res.status(200).send(await _getUserObj({ _id: existingUser._id }));
         }
       } else {
@@ -146,6 +152,7 @@ export default async function authApi(app: Express, db: Db) {
           const userObject = await _getUserObj({ _id: insertedId });
           res.cookie('SA_TOKEN', _getToken(userObject), {
             httpOnly: true,
+            sameSite: 'none',
           });
           res.status(201).send(userObject);
         }
